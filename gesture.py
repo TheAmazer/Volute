@@ -225,8 +225,8 @@ class MouseGestureTracker:
         if the user has stopped moving the mouse. Deactivates if idle.
         """
         now = time.time()
-        if self.active and (now - self.last_move_time) > 0.4:
-            self.signals.debug_status.emit("Deactivated: Mouse idle (no movement for > 0.4s)")
+        if self.active and (now - self.last_move_time) > 2.0:
+            self.signals.debug_status.emit("Deactivated: Mouse idle (no movement for > 2.0s)")
             self.deactivate()
             
     def deactivate(self):

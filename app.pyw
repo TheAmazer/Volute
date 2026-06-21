@@ -13,7 +13,7 @@ import threading
 import winsound
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon, QMenu
 from PySide6.QtCore import QTimer, Slot, Qt
-from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QPen, QPainterPath
+from PySide6.QtGui import QIcon, QPixmap, QPainter, QColor, QPen, QPainterPath, QFont
 
 # Import local modules
 from volume import VolumeController
@@ -89,6 +89,11 @@ class MouseGestureApp:
         self.activation_volume = 0.5
         self.accumulated_deg = 0.0
         
+        # Show a brief, premium notification indicating Volute is active
+        from hud import StartupNotification
+        self.startup_notification = StartupNotification()
+        self.startup_notification.show_notification()
+        
     def load_settings(self):
         if os.path.exists(CONFIG_FILE):
             try:
@@ -114,8 +119,7 @@ class MouseGestureApp:
         
     def create_tray_icon(self) -> QIcon:
         """
-        Procedurally draws a beautiful tray icon in memory.
-        Displays a glowing cyan loop with a white mouse pointer.
+        Renders the spiral emoji 🌀 procedurally as a high-resolution QIcon for the tray.
         """
         pixmap = QPixmap(64, 64)
         pixmap.fill(Qt.transparent)
@@ -123,25 +127,13 @@ class MouseGestureApp:
         painter = QPainter(pixmap)
         painter.setRenderHint(QPainter.Antialiasing)
         
-        # Draw a glowing cyan circle
-        pen = QPen(QColor(0, 242, 254), 6)
-        painter.setPen(pen)
-        painter.drawEllipse(6, 6, 52, 52)
+        # Use Segoe UI Emoji for high-quality Windows emoji rendering
+        font = QFont("Segoe UI Emoji", 36)
+        painter.setFont(font)
         
-        # Draw a white cursor arrow pointing up-left
-        path = QPainterPath()
-        path.moveTo(24, 18)
-        path.lineTo(42, 34)
-        path.lineTo(32, 34)
-        path.lineTo(38, 48)
-        path.lineTo(33, 50)
-        path.lineTo(27, 36)
-        path.lineTo(24, 38)
-        path.closeSubpath()
-        
-        painter.setPen(QPen(QColor(255, 255, 255), 2))
-        painter.setBrush(QColor(255, 255, 255))
-        painter.drawPath(path)
+        # Center the spiral emoji 🌀 in the pixmap
+        rect = pixmap.rect()
+        painter.drawText(rect, Qt.AlignCenter, "🌀")
         
         painter.end()
         return QIcon(pixmap)
@@ -189,7 +181,7 @@ class MouseGestureApp:
         self.settings_window.activateWindow()
         
     def save_callback(self, new_settings: dict):
-        self.save_settings(new_settings)
+        self.save_callback(new_settings)
         
     @Slot(str)
     def on_gesture_activated(self, direction: str):

@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsDropShadowEffect
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsDropShadowEffect
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer, QRectF
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QLinearGradient, QFont
 from PySide6.QtCore import Property
@@ -181,11 +181,6 @@ class VolumeHUD(QWidget):
         self.fade_animation.setDuration(200)
         self.fade_animation.setEasingCurve(QEasingCurve.OutQuad)
         
-        # Auto-hide timer
-        self.hide_timer = QTimer(self)
-        self.hide_timer.setSingleShot(True)
-        self.hide_timer.timeout.connect(self.fade_out)
-        
         self.setWindowOpacity(0.0)
         self.is_visible = False
         
@@ -227,9 +222,6 @@ class VolumeHUD(QWidget):
             self.fade_animation.setEndValue(1.0)
             self.fade_animation.start()
             self.is_visible = True
-            
-        # Reset hide timer (auto-dismiss after 1.5 seconds of silence)
-        self.hide_timer.start(1500)
         
     def fade_out(self):
         if self.is_visible:
@@ -259,3 +251,145 @@ class VolumeHUD(QWidget):
         x = geom.x() + (geom.width() - self.width()) // 2
         y = geom.y() + (geom.height() - self.height()) // 2
         self.move(x, y)
+
+
+from PySide6.QtCore import QPoint
+
+class StartupNotification(QWidget):
+    """
+    A beautiful, premium popup notification that fades in and slides up
+    from the bottom-right corner of the screen to notify the user
+    that Volute is running in the tray.
+    """
+    def __init__(self):
+        super().__init__()
+        
+        self.setWindowFlags(
+            Qt.FramelessWindowHint |
+            Qt.WindowStaysOnTopHint |
+            Qt.WindowTransparentForInput |
+            Qt.Tool
+        )
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        self.setFixedSize(320, 90)
+        
+        # Layout
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(10, 10, 10, 10)
+        
+        # Container widget for styling
+        self.container = QWidget(self)
+        self.container.setObjectName("Container")
+        self.container.setStyleSheet("""
+            QWidget#Container {
+                background-color: rgba(18, 18, 25, 230);
+                border: 1px solid rgba(0, 242, 254, 45);
+                border-radius: 16px;
+            }
+        """)
+        
+        container_layout = QHBoxLayout(self.container)
+        container_layout.setContentsMargins(15, 10, 15, 10)
+        container_layout.setSpacing(12)
+        
+        # Icon / Emoji
+        self.icon_label = QLabel(self.container)
+        self.icon_label.setStyleSheet("font-size: 26px;")
+        self.icon_label.setText("🌀")
+        container_layout.addWidget(self.icon_label)
+        
+        # Text container layout
+        text_layout = QVBoxLayout()
+        text_layout.setSpacing(2)
+        
+        title_label = QLabel("VOLUTE ACTIVE", self.container)
+        title_label.setStyleSheet("color: #00f2fe; font-size: 13px; font-weight: bold; letter-spacing: 0.5px;")
+        
+        desc_label = QLabel("Running in system tray. Draw circles to control volume.", self.container)
+        desc_label.setStyleSheet("color: #a5a5b5; font-size: 11px;")
+        desc_label.setWordWrap(True)
+        
+        text_layout.addWidget(title_label)
+        text_layout.addWidget(desc_label)
+        container_layout.addLayout(text_layout)
+        
+        layout.addWidget(self.container)
+        
+        # Glowing shadow effect
+        shadow = QGraphicsDropShadowEffect(self)
+        shadow.setBlurRadius(20)
+        shadow.setOffset(0, 2)
+        shadow.setColor(QColor(0, 242, 254, 45))
+        self.container.setGraphicsEffect(shadow)
+        
+        # Opacity and position animations
+        self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
+        self.fade_animation.setDuration(250)
+        self.fade_animation.setEasingCurve(QEasingCurve.OutCubic)
+        
+        self.pos_animation = QPropertyAnimation(self, b"pos")
+        self.pos_animation.setDuration(300)
+        self.pos_animation.setEasingCurve(QEasingCurve.OutCubic)
+        
+        # Auto-close timer
+        self.close_timer = QTimer(self)
+        self.close_timer.setSingleShot(True)
+        self.close_timer.timeout.connect(self.fade_out)
+        
+    def show_notification(self):
+        from PySide6.QtGui import QGuiApplication
+        screen = QGuiApplication.primaryScreen()
+        if not screen:
+            return
+            
+        geom = screen.availableGeometry()
+        
+        # Calculate target position (resting 20px above the taskbar at the bottom right)
+        target_x = geom.x() + geom.width() - self.width() - 20
+        target_y = geom.y() + geom.height() - self.height() - 20
+        
+        # Start position (offset off-screen at the bottom)
+        start_x = target_x
+        start_y = geom.y() + geom.height() + 10
+        
+        self.move(start_x, start_y)
+        self.setWindowOpacity(0.0)
+        self.show()
+        
+        # Animate opacity (fade in)
+        self.fade_animation.stop()
+        self.fade_animation.setStartValue(0.0)
+        self.fade_animation.setEndValue(1.0)
+        self.fade_animation.start()
+        
+        # Animate position (slide up)
+        self.pos_animation.stop()
+        self.pos_animation.setStartValue(self.pos())
+        self.pos_animation.setEndValue(QPoint(target_x, target_y))
+        self.pos_animation.start()
+        
+        # Start auto-dismiss timer (stay for 3 seconds)
+        self.close_timer.start(3000)
+        
+    def fade_out(self):
+        from PySide6.QtGui import QGuiApplication
+        screen = QGuiApplication.primaryScreen()
+        if not screen:
+            self.close()
+            return
+            
+        geom = screen.availableGeometry()
+        end_y = geom.y() + geom.height() + 10
+        
+        # Fade out
+        self.fade_animation.stop()
+        self.fade_animation.setStartValue(self.windowOpacity())
+        self.fade_animation.setEndValue(0.0)
+        self.fade_animation.finished.connect(self.close)
+        self.fade_animation.start()
+        
+        # Slide down
+        self.pos_animation.stop()
+        self.pos_animation.setStartValue(self.pos())
+        self.pos_animation.setEndValue(QPoint(self.x(), end_y))
+        self.pos_animation.start()
