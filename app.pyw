@@ -181,7 +181,7 @@ class MouseGestureApp:
         self.settings_window.activateWindow()
         
     def save_callback(self, new_settings: dict):
-        self.save_callback(new_settings)
+        self.save_settings(new_settings)
         
     @Slot(str)
     def on_gesture_activated(self, direction: str):
@@ -226,9 +226,12 @@ class MouseGestureApp:
         # Perform adjustment
         self.volume_controller.set_volume(new_vol)
         
-        # Audio feedback: soft mechanical tick
+        # Audio feedback: soft mechanical tick only when a 1% volume change is made
         if self.settings["sound_enabled"]:
-            play_audio_feedback(1500, 8)
+            old_pct = round(current_volume * 100)
+            new_pct = round(new_vol * 100)
+            if old_pct != new_pct:
+                play_audio_feedback(1500, 8)
             
         if self.settings["hud_enabled"]:
             self.hud.show_volume(new_vol)
@@ -242,16 +245,23 @@ class MouseGestureApp:
         self.qt_app.quit()
 
 def main():
-    # Force style for dark mode on Windows
-    os.environ["QT_QUICK_CONTROLS_STYLE"] = "Basic"
-    
-    app = QApplication(sys.argv)
-    app.setQuitOnLastWindowClosed(False)
-    
-    # Run application logic
-    gesture_app = MouseGestureApp(app)
-    
-    sys.exit(app.exec())
+    try:
+        # Force style for dark mode on Windows
+        os.environ["QT_QUICK_CONTROLS_STYLE"] = "Basic"
+        
+        app = QApplication(sys.argv)
+        app.setQuitOnLastWindowClosed(False)
+        
+        # Run application logic
+        gesture_app = MouseGestureApp(app)
+        
+        sys.exit(app.exec())
+    except Exception as e:
+        import traceback
+        with open("debug_crash.log", "w") as f:
+            f.write(f"Exception: {str(e)}\n")
+            f.write(traceback.format_exc())
+        raise
 
 if __name__ == "__main__":
     main()

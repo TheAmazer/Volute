@@ -47,6 +47,13 @@ class MouseGestureTracker:
         self.active_radius = 0.0
         self.last_angle = 0.0
         
+        # Speed-sensitive scaling variables
+        self.last_process_time = time.time()
+        self.rolling_omega = 360.0        # Smooth rolling speed in degrees/second
+        self.omega_slow = 120.0           # Speed below which maximum precision is applied (degrees/sec)
+        self.omega_fast = 360.0           # Speed above which standard configured sensitivity is used (degrees/sec)
+        self.fine_scale = 2.5             # Multiplier to sensitivity when moving slowly (finer volume changes)
+        
     def update_settings(self, settings: dict):
         """
         Updates the tracker settings in a thread-safe manner.
@@ -125,14 +132,31 @@ class MouseGestureTracker:
             # Convert to degrees for easier calibration
             diff_deg = math.degrees(diff)
             
+            # Calculate rolling speed (angular velocity)
+            dt = now - self.last_process_time
+            if dt > 0.001:
+                current_omega = abs(diff_deg) / dt
+                # Smoothen timing jitter/sub-pixel noise using EMA
+                self.rolling_omega = self.rolling_omega * 0.7 + current_omega * 0.3
+                self.last_process_time = now
+                
+            # Interpolate multiplier based on rolling speed
+            omega = max(self.omega_slow, min(self.omega_fast, self.rolling_omega))
+            t = (omega - self.omega_slow) / (self.omega_fast - self.omega_slow)
+            multiplier = self.fine_scale + (1.0 - self.fine_scale) * t
+            
+            effective_sensitivity = sensitivity * multiplier
+            
             # Volume change is proportional to angle swept
             # sensitivity is number of rotations for 100% volume change
             # One rotation = 360 degrees. 
-            # vol_delta = diff_deg / (360 * sensitivity)
-            vol_delta = diff_deg / (360.0 * sensitivity)
+            vol_delta = diff_deg / (360.0 * effective_sensitivity)
             
             if abs(vol_delta) > 0.0001:
                 self.signals.volume_changed.emit(vol_delta)
+                self.signals.debug_status.emit(
+                    f"Active: Speed={self.rolling_omega:.0f}°/s | Mult={multiplier:.2f}x | VolDelta={vol_delta:+.4f}"
+                )
                 
             self.last_angle = current_angle
             
@@ -218,6 +242,14 @@ class MouseGestureTracker:
                 
                 self.signals.debug_status.emit(f"Gesture Activated: {self.active_direction.upper()}")
                 self.signals.activated.emit(self.active_direction)
+                
+                # Initialize speed-sensitive tracking state
+                self.last_process_time = now
+                if duration > 0:
+                    # Use cumulative rotation for starting angular speed
+                    self.rolling_omega = cum_rot_deg / duration
+                else:
+                    self.rolling_omega = 360.0
                 
     def check_idle(self):
         """

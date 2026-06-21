@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QGraphicsDropShadowEffect
 from PySide6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer, QRectF
 from PySide6.QtGui import QPainter, QPen, QColor, QBrush, QLinearGradient, QFont
-from PySide6.QtCore import Property
 
 # Color theme profiles for visual customization
 THEME_PALETTES = {
@@ -26,6 +25,8 @@ THEME_PALETTES = {
         "glow": QColor(240, 46, 170, 80)
     }
 }
+
+from PySide6.QtCore import Property
 
 class CircularProgressBar(QWidget):
     """
