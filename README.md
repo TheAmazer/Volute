@@ -6,11 +6,9 @@ The name **Volute** is a double-meaning: it represents the circular, spiral-like
 
 ## Demonstration & Visuals
 
-*(Below are placeholders for future screenshots showing the visual HUD themes and settings layout)*
-
 | Settings Control Panel | Translucent HUD Overlay |
 | :---: | :---: |
-| ![Settings Panel Placeholder](https://via.placeholder.com/400x560.png?text=Volute+Settings+Panel) | ![HUD Ring Placeholder](https://via.placeholder.com/300x300.png?text=Volute+HUD+Ring) |
+| ![Settings Control Panel](assets/settings_screenshot.png) | ![Translucent HUD Overlay](assets/hud_screenshot.png) |
 
 *The overlay HUD features neon-glowing color gradients that sweep smoothly as you rotate the mouse.*
 
@@ -19,9 +17,11 @@ The name **Volute** is a double-meaning: it represents the circular, spiral-like
 - **2-Second Safety Sequence**: Prevents accidental volume adjustments during normal browsing, gaming, or point-and-click work. The gesture must be sustained continuously for at least 2 seconds to activate.
 - **Clockwise Rotation**: Increases master system volume.
 - **Counter-Clockwise Rotation**: Decreases master system volume.
-- **Tactile Audio Feedback**: Emits subtle, non-blocking click sounds (similar to mechanical encoder clicks) when adjusting, and distinct startup/shutdown chirps when activating or deactivating.
-- **Glassmorphic HUD Overlay**: Displays a translucent, glowing visual ring at the center of the active monitor indicating the current volume percentage. Fades out smoothly after 1.5 seconds of inactivity.
-- **Aesthetic Settings Panel**: Styled in premium dark mode. Allows adjusting activation delay, required rotation, scroll speed, minimum radius, HUD themes, and includes a live mathematical telemetry log.
+- **Dynamic Speed-Sensitive Scaling**: Automatically scales sensitivity based on rotation speed. Rotating fast adjusts the volume at the configured baseline, while rotating slowly applies up to a $2.5\times$ precision multiplier for precise, fine-grained adjustments.
+- **Precision Audio Ticks**: Emits subtle, non-blocking click sounds (similar to mechanical encoder clicks) **only** when a 1% volume change is made (crossing integer boundaries), eliminating audio spam.
+- **Glassmorphic HUD Overlay**: Displays a translucent, glowing visual ring at the center of the active monitor indicating the current volume percentage. Fades out smoothly after 2 seconds of inactivity.
+- **Aesthetic Settings Panel**: Styled in premium dark mode. Allows adjusting activation delay, required rotation, scroll speed, minimum radius, HUD themes, and includes a live mathematical telemetry log showing rotation speeds, dynamic precision multipliers, and active volume changes.
+- **Standalone Compiled Executable**: Packaged into a single, windowless, high-performance binary `dist/Volute.exe` with a custom high-resolution spiral emoji embedded as the file's icon.
 
 ## Visual Themes
 
